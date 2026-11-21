@@ -1,0 +1,2483 @@
+<!DOCTYPE html>
+<html lang="ur" dir="ltr" id="app-html">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hope Welfare Association — Tando Adam</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f1f5f9;
+            color: #1e293b;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow-x: hidden;
+            text-align: left !important;
+            transition: background-color 0.25s ease, color 0.25s ease;
+        }
+        .light-card {
+            background: #ffffff;
+            border: 1px solid rgba(226, 232, 240, 0.85);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            text-align: left !important;
+            overflow: hidden;
+            overflow-wrap: anywhere;
+            word-break: break-word;
+            transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease;
+        }
+        .light-card h1,
+        .light-card h2,
+        .light-card h3,
+        .light-card h4,
+        .light-card p,
+        .light-card span,
+        .light-card div {
+            overflow-wrap: anywhere;
+            word-break: break-word;
+        }
+
+        body.theme-dark {
+            background-color: #0b1120;
+            color: #e2e8f0;
+        }
+        body.theme-dark .light-card {
+            background: #111827;
+            border: 1px solid rgba(51, 65, 85, 0.85);
+            box-shadow: 0 12px 28px -6px rgba(0, 0, 0, 0.45);
+            color: #e2e8f0;
+        }
+        body.theme-dark header,
+        body.theme-dark nav {
+            background-color: rgba(15, 23, 42, 0.96) !important;
+            border-color: #1e293b !important;
+        }
+        body.theme-dark h1, body.theme-dark h2, body.theme-dark h3, body.theme-dark h4 {
+            color: #f8fafc !important;
+        }
+        body.theme-dark p {
+            color: #94a3b8 !important;
+        }
+
+        body.theme-neon {
+            background: radial-gradient(circle at top right, #1e1b4b, #090d16 65%);
+            color: #f1f5f9;
+        }
+        body.theme-neon .light-card {
+            background: rgba(17, 24, 39, 0.72);
+            backdrop-filter: blur(14px);
+            border: 1px solid rgba(34, 211, 238, 0.35);
+            box-shadow: 0 0 24px rgba(34, 211, 238, 0.12);
+            color: #f1f5f9;
+        }
+        body.theme-neon header,
+        body.theme-neon nav {
+            background-color: rgba(9, 13, 22, 0.9) !important;
+            border-color: rgba(34, 211, 238, 0.25) !important;
+        }
+        body.theme-neon h1, body.theme-neon h2, body.theme-neon h3, body.theme-neon h4 {
+            color: #ffffff !important;
+        }
+        body.theme-neon p {
+            color: #cbd5e1 !important;
+        }
+
+        .clickable-photo {
+            cursor: zoom-in;
+            transition: transform 0.2s ease;
+        }
+        .clickable-photo:hover {
+            transform: scale(1.01);
+        }
+
+        .tab-transition {
+            animation: fadeSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes fadeSlideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-white">
+
+    <!-- PHOTO LIGHTBOX MODAL -->
+    <div id="photo-lightbox" onclick="closePhotoLightbox(event)" class="fixed inset-0 z-50 hidden bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="relative max-w-4xl w-full flex flex-col items-center gap-3" onclick="event.stopPropagation()">
+            <button type="button" onclick="closePhotoLightbox()" aria-label="Close photo" class="self-end bg-white/15 hover:bg-white/25 text-white w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <img id="lightbox-img" src="" alt="Full view photo" class="max-h-[82vh] max-w-full object-contain rounded-2xl shadow-2xl border border-white/15 bg-slate-950">
+            <p id="lightbox-caption" class="text-xs text-slate-200 text-center font-semibold"></p>
+        </div>
+    </div>
+
+    <!-- STARTUP GATEWAY -->
+    <div id="auth-gateway" class="fixed inset-0 z-50 bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 text-center space-y-5 shadow-2xl border border-slate-200 tab-transition my-auto">
+            <div class="w-20 h-20 rounded-2xl bg-amber-50 border border-amber-200 p-1.5 flex items-center justify-center mx-auto shadow-inner overflow-hidden">
+                <img
+                    id="gw-top-img"
+                    src="https://uoahcfcxvmpakinqpbxn.supabase.co/storage/v1/object/public/welfare_media/ffd.png"
+                    alt="Hope Welfare Association"
+                    onclick="openPhotoLightbox(this.src, 'Hope Welfare Association')"
+                    onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='ffd.png';}else{this.classList.add('hidden');document.getElementById('gw-fallback-icon').classList.remove('hidden');}"
+                    class="clickable-photo w-full h-full object-contain rounded-xl"
+                >
+                <i id="gw-fallback-icon" class="hidden fa-solid fa-hands-holding-child text-2xl text-amber-600"></i>
+            </div>
+            <div>
+                <h2 class="text-xl font-extrabold text-slate-900" id="gw-title">Hope Welfare Association</h2>
+                <p class="text-xs text-slate-500 mt-1" id="gw-sub">Tando Adam — Choose Language & Access Mode</p>
+            </div>
+
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3 space-y-2">
+                <span class="block text-[11px] font-bold text-slate-700" id="gw-lang-prompt">Select Language / زبان منتخب کریں:</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button type="button" id="gw-btn-en" onclick="selectGatewayLanguage('en')" class="py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 text-white shadow-sm transition">
+                        English
+                    </button>
+                    <button type="button" id="gw-btn-ur" onclick="selectGatewayLanguage('ur')" class="py-2 px-3 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-300 transition">
+                        اردو (Urdu)
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-3 pt-1">
+                <button type="button" onclick="loginAsViewer()" id="gw-viewer-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow-sm">
+                    <i class="fa-solid fa-user-check"></i>
+                    <span>Continue as Viewer</span>
+                </button>
+                <button type="button" onclick="showAdminLoginBox()" id="gw-admin-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center gap-2 transition shadow">
+                    <i class="fa-solid fa-shield-halved"></i>
+                    <span>Login as Admin</span>
+                </button>
+            </div>
+
+            <div id="gateway-admin-box" class="hidden space-y-2.5 pt-3 border-t border-slate-100 text-left">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1" id="gw-name-label">Admin Name (Shown on Group Messages)</label>
+                    <input type="text" id="gateway-admin-name" placeholder="Maslan: Nadeem" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1" id="gw-pin-label">Admin Password</label>
+                    <div class="relative">
+                        <input type="password" id="gateway-admin-pin" placeholder="Enter Admin Password" class="w-full bg-slate-50 border border-slate-300 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-900 outline-none focus:border-amber-500">
+                        <button type="button" onclick="togglePasswordFieldVisibility('gateway-admin-pin', 'gateway-pin-eye-icon')" aria-label="Show or hide password" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-800 transition">
+                            <i id="gateway-pin-eye-icon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="button" onclick="verifyGatewayAdmin()" id="gw-verify-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition">
+                    Verify & Enter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOP STICKY HEADER (ffd.png LINK IN LOGO BOX) -->
+    <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-slate-200 px-4 py-3">
+        <div class="max-w-3xl mx-auto flex items-center justify-between gap-2">
+            <div class="flex items-center gap-3 min-w-0">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/10 p-1 border border-amber-500/30 flex items-center justify-center shrink-0">
+                    <img
+                        src="https://uoahcfcxvmpakinqpbxn.supabase.co/storage/v1/object/public/welfare_media/ffd.png"
+                        alt="ffd.png"
+                        onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='ffd.png';}"
+                        class="w-full h-full object-contain rounded-xl"
+                    >
+                </div>
+                <div class="truncate">
+                    <h1 class="text-sm font-bold text-slate-900 truncate">Hope Welfare Association</h1>
+                    <p class="text-[11px] text-amber-600 font-semibold truncate" id="display-subtitle">Tando Adam (For Tando Adam Only)</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="toggleAppLanguage()" class="px-2.5 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold transition flex items-center gap-1">
+                    <i class="fa-solid fa-language"></i> <span id="lang-btn-text">اردو</span>
+                </button>
+                <button type="button" onclick="logoutToGateway()" class="px-2.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition flex items-center gap-1" title="Switch Role / Language">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline" id="role-badge-text">Viewer</span>
+                </button>
+                <a href="https://wa.me/923142822332?text=Assalam-o-Alaikum,%20Hope%20Welfare%20Association%20Tando%20Adam%20ke%20baray%20me%20maloomat%20chahiye." target="_blank" class="flex items-center gap-1 bg-emerald-600 text-white px-2.5 py-1.5 rounded-full text-xs font-bold transition shadow-sm">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    <span id="txt-whatsapp">Contact</span>
+                </a>
+                <button type="button" onclick="syncWithCloud(true)" class="p-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 transition" title="Sync Database">
+                    <i id="sync-icon" class="fa-solid fa-rotate text-xs"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-3xl mx-auto w-full px-4 pt-5 pb-28">
+
+        <!-- TAB 1: HOME -->
+        <section id="view-home" class="tab-transition space-y-6">
+            <div class="relative rounded-3xl overflow-hidden light-card p-6 sm:p-8 border-t-4 border-amber-500 shadow-lg">
+                <div class="relative z-10 space-y-3">
+                    <span class="inline-block bg-amber-500/10 text-amber-700 text-xs font-bold px-3 py-1 rounded-full border border-amber-500/25" id="display-badge">
+                        For Deserving People of Tando Adam
+                    </span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-900 leading-relaxed" id="display-herotitle">
+                        Serving Humanity, Voice of Tando Adam — United Through Struggle
+                    </h2>
+                    <p class="text-slate-600 text-xs sm:text-sm leading-loose" id="display-herodesc">
+                        Hope Welfare Association aims to help poor and deserving families in Tando Adam. Clean water, ration, and livelihood support are our top priorities.
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-2.5">
+                        <button type="button" onclick="switchTab('schemes')" class="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs py-2.5 px-5 rounded-xl shadow transition" id="txt-view-schemes-btn">
+                            View Active Schemes
+                        </button>
+                        <button type="button" onclick="switchTab('group')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl shadow transition inline-flex items-center gap-1.5">
+                            <span id="txt-open-group-btn">Open Group</span>
+                            <span id="home-group-unread-pill" class="hidden bg-white text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">0 unread</span>
+                        </button>
+                    </div>
+
+                    <!-- HERO BANNER IMAGES BOX BELOW BUTTONS -->
+                    <div id="home-hero-images-wrapper" class="space-y-3">
+                        <div id="home-hero-images-container" class="space-y-3"></div>
+
+                        <div id="hero-inline-admin-panel" class="hidden rounded-2xl border border-emerald-300 bg-emerald-50/90 p-3.5 space-y-3" onclick="event.stopPropagation()">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-xs font-extrabold text-emerald-900">
+                                    <i class="fa-solid fa-images"></i> Manage Hero Banner Images (Multiple Add / Remove)
+                                </span>
+                                <button type="button" onclick="closeHeroInlineAdminPanel()" class="text-[11px] font-bold text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded-lg bg-white border border-slate-200">
+                                    Close
+                                </button>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-700 mb-1">Image Caption (Optional)</label>
+                                <input type="text" id="hero-banner-caption" placeholder="Maslan: Tando Adam Welfare Drive" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                            </div>
+
+                            <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                                <input type="file" id="hero-banner-files" accept="image/*" multiple class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-800 hover:file:bg-emerald-200">
+                                <button type="button" onclick="addHeroBannerImages()" id="add-hero-images-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">
+                                    + Add Hero Image(s)
+                                </button>
+                            </div>
+
+                            <div id="admin-hero-images-list" class="space-y-2"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Completed Schemes Grid -->
+            <div id="home-stats-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-3.5"></div>
+
+            <!-- CUSTOM MESSAGE BOXES, NOTES & MEDIA -->
+            <div id="dynamic-home-custom-container" class="space-y-4"></div>
+
+            <!-- Message of Humanity -->
+            <div class="light-card rounded-2xl p-6 text-center space-y-2 border border-amber-200 bg-amber-50/40">
+                <span class="text-[10px] font-bold text-amber-700" id="txt-quote-tag">Message of Humanity</span>
+                <p id="display-quote" class="text-sm sm:text-base text-slate-800 leading-loose italic">
+                    "Serving humanity is the best form of worship. Exclusively for deserving people of Tando Adam."
+                </p>
+            </div>
+        </section>
+
+        <!-- TAB 2: SCHEMES -->
+        <section id="view-schemes" class="hidden tab-transition space-y-6">
+            <h2 class="text-lg font-bold text-slate-900" id="txt-schemes-heading">Welfare Schemes (Tando Adam)</h2>
+
+            <!-- ADMIN ONLY: ADD SCHEME DIRECTLY INSIDE SCHEMES TAB -->
+            <div id="schemes-admin-creator" class="hidden light-card rounded-2xl p-4 border-l-4 border-amber-500 space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-xs font-extrabold text-amber-800">
+                        <i class="fa-solid fa-plus-circle"></i> Add New Scheme (Admin Only)
+                    </h3>
+                    <button type="button" onclick="openContinueSchemeOption(true)" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition">
+                        + Continue Scheme
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1">Scheme Status</label>
+                        <select id="scheme-form-status" onchange="updateSchemeLivePreview()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                            <option value="scheme_active">Active Scheme (Schemes Tab Only)</option>
+                            <option value="scheme_completed">Completed Scheme (Shows in Home Grid)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-600 mb-1">Card Color</label>
+                        <select id="scheme-form-color" onchange="updateSchemeLivePreview()" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                            <option value="emerald">Emerald (Green)</option>
+                            <option value="blue">Blue (Sky)</option>
+                            <option value="amber">Amber (Gold)</option>
+                            <option value="purple">Purple (Special)</option>
+                            <option value="red">Red (Urgent)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Scheme Title * (Likhein "Continue" to open next option)</label>
+                    <input type="text" id="scheme-form-title" oninput="handleSchemeContinueTrigger(); updateSchemeLivePreview();" placeholder='Maslan: Free Eye Camp ya "Continue"' class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-600 mb-1">Scheme Details / Count *</label>
+                    <textarea id="scheme-form-desc" rows="2" oninput="handleSchemeContinueTrigger(); updateSchemeLivePreview();" placeholder="Maslan: 250+ Patients Treated" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none"></textarea>
+                </div>
+
+                <!-- CONTINUE OPTION PANEL (OPENS AUTOMATICALLY ON "Continue" OR BUTTON CLICK) -->
+                <div id="scheme-continue-option-box" class="hidden bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-[11px] font-extrabold text-emerald-900">
+                            <i class="fa-solid fa-forward-step"></i> Continue Option — Next Scheme Entry
+                        </span>
+                        <button type="button" onclick="closeContinueSchemeOption()" class="text-[10px] font-bold text-slate-600 hover:text-slate-900 bg-white border border-slate-200 px-2 py-0.5 rounded-lg">
+                            Hide
+                        </button>
+                    </div>
+                    <input type="text" id="scheme-cont-title" oninput="updateSchemeLivePreview()" placeholder="Next Scheme Title (Maslan: Ration Drive Phase 2)" class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                    <textarea id="scheme-cont-desc" rows="2" oninput="updateSchemeLivePreview()" placeholder="Next Scheme Details (Maslan: 100 Families)" class="w-full bg-white border border-emerald-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none"></textarea>
+                </div>
+
+                <div class="space-y-1.5">
+                    <div class="flex items-center justify-between">
+                        <input type="file" id="scheme-form-media" accept="image/*,video/*" onchange="handleSchemeMediaChange(event)" class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800">
+                        <button type="button" onclick="clearSchemeFormMedia()" class="text-[11px] text-red-600 font-bold hover:underline">Clear Media</button>
+                    </div>
+                    <p id="scheme-media-info" class="text-[10px] text-slate-500">No media selected</p>
+                </div>
+
+                <div class="min-w-0 pt-1">
+                    <span class="block text-[10px] font-bold text-slate-500 mb-1.5">Live Scheme Preview (Aisi nazar aayegi):</span>
+                    <div id="scheme-form-preview" class="min-w-0 overflow-hidden"></div>
+                </div>
+
+                <button type="button" onclick="addSchemeAsAdmin()" id="add-scheme-admin-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold px-4 py-2.5 rounded-xl text-xs transition shadow">
+                    + Add Scheme
+                </button>
+            </div>
+
+            <div id="schemes-public-container" class="space-y-4">
+                <div class="light-card rounded-2xl p-6 text-center text-xs font-semibold text-slate-500">
+                    There are no active schemes
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: GROUP -->
+        <section id="view-group" class="hidden tab-transition space-y-5">
+            <div class="light-card rounded-3xl p-5 border-t-4 border-emerald-500 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-11 h-11 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center text-lg font-bold shrink-0">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h2 class="text-base font-extrabold text-slate-900 truncate" id="txt-group-heading">Hope Welfare Group</h2>
+                        <p class="text-[11px] text-slate-500" id="txt-group-sub">First posted message appears at top; newly posted below it.</p>
+                    </div>
+                </div>
+                <span id="group-unread-badge" class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full shrink-0">0 unread</span>
+            </div>
+
+            <div id="group-admin-composer" class="hidden light-card rounded-2xl p-4 border-l-4 border-amber-500 space-y-3">
+                <div class="flex items-center justify-between text-xs">
+                    <span class="font-extrabold text-amber-700"><i class="fa-solid fa-paper-plane"></i> <span id="txt-group-post-label">Post in Group</span></span>
+                    <span class="text-[11px] font-bold text-slate-600" id="group-active-admin-label">Admin: Nadeem</span>
+                </div>
+                <textarea id="group-msg-text" rows="2" placeholder="Write group message (text)..." class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none"></textarea>
+
+                <!-- VOICE RECORDING CONTROLS -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 space-y-2">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="group-voice-record-btn" onclick="toggleGroupVoiceRecording()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 transition">
+                                <i class="fa-solid fa-microphone"></i> <span id="group-voice-btn-label">Record Voice</span>
+                            </button>
+                            <span id="group-voice-timer" class="hidden text-[11px] font-extrabold text-rose-600">00:00</span>
+                        </div>
+                        <button type="button" id="group-voice-clear-btn" onclick="clearGroupRecordedVoice()" class="hidden text-[11px] font-bold text-red-600 hover:underline">
+                            Remove Voice
+                        </button>
+                    </div>
+                    <audio id="group-voice-preview" controls class="hidden w-full h-9"></audio>
+                </div>
+
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <input type="file" id="group-media-file" accept="image/*,video/*,audio/*" onchange="handleGroupMediaInputChange()" class="text-xs text-slate-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-emerald-100 file:text-emerald-800">
+                    <button type="button" onclick="sendGroupMessage()" id="send-group-msg-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition shrink-0">
+                        Send Message
+                    </button>
+                </div>
+            </div>
+
+            <div id="group-viewer-notice" class="light-card rounded-2xl p-3 text-center text-[11px] text-slate-500">
+                <i class="fa-solid fa-eye mr-1"></i> <span id="txt-group-readonly">Read-only group — sirf Admin yahan text, voice, photo ya video bhej sakta hai.</span>
+            </div>
+
+            <div id="group-messages-container" class="space-y-3.5"></div>
+        </section>
+
+        <!-- TAB 4: CUSTOMIZATION PANEL (ONLY FOR LOGGED-IN ADMIN) -->
+        <section id="view-customize" class="hidden tab-transition space-y-6">
+            <div class="light-card rounded-3xl p-6 border-t-4 border-amber-500">
+                <h2 class="text-base font-bold text-slate-900 mb-3" id="txt-customize-title">Customization Panel</h2>
+
+                <div id="customize-editor-screen" class="hidden space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Subtitle</label>
+                        <input type="text" id="cust-subtitle" class="w-full bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Hero Title</label>
+                        <input type="text" id="cust-herotitle" class="w-full bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5">Hero Description</label>
+                        <textarea id="cust-herodesc" rows="3" class="w-full bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-amber-500"></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1.5" id="txt-cust-quote-label">Message of Humanity</label>
+                        <textarea id="cust-quote" rows="2" class="w-full bg-white border border-slate-300 rounded-2xl px-4 py-2.5 text-xs text-slate-900 outline-none focus:border-amber-500"></textarea>
+                    </div>
+
+                    <button type="button" onclick="pushCustomizationLive()" id="cust-publish-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3.5 rounded-2xl text-xs transition shadow">
+                        Publish All Changes Live
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: ADMIN MASTER CONTROL PANEL (ONLY FOR LOGGED-IN ADMIN) -->
+        <section id="view-admin" class="hidden tab-transition space-y-6">
+            <div class="light-card rounded-3xl p-6 border-t-4 border-amber-500">
+                <h2 class="text-base font-bold text-slate-900 mb-2" id="txt-admin-title">Admin Master Control Panel</h2>
+
+                <div id="admin-editor-screen" class="hidden space-y-5 pt-2">
+                    <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl text-xs text-emerald-800 font-semibold flex items-center justify-between gap-2">
+                        <span id="txt-admin-verified-msg">Admin Access Verified!</span>
+                        <span class="bg-emerald-700 text-white px-2.5 py-1 rounded-lg text-[11px] shrink-0" id="admin-display-name-badge">Admin: Nadeem</span>
+                    </div>
+
+                    <!-- 1. THEME -->
+                    <div class="bg-slate-100/90 p-4 rounded-2xl border border-slate-200 space-y-2.5">
+                        <label class="block text-xs font-extrabold text-slate-800"><i class="fa-solid fa-palette text-amber-600"></i> 1. App Theme (Light / Dark / Neon)</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button type="button" onclick="applyAppTheme('light')" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-white text-slate-900 border border-slate-300 shadow-sm transition">
+                                Light Theme
+                            </button>
+                            <button type="button" onclick="applyAppTheme('dark')" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-slate-800 text-white border border-slate-700 transition">
+                                Dark Theme
+                            </button>
+                            <button type="button" onclick="applyAppTheme('neon')" class="py-2.5 px-3 rounded-xl text-xs font-bold bg-indigo-950 text-cyan-300 border border-cyan-500/40 transition">
+                                Neon Glass
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 2. CUSTOM MESSAGE BOX -->
+                    <div class="bg-amber-50/80 p-4 rounded-2xl border border-amber-200 space-y-3 overflow-hidden">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs font-extrabold text-amber-900"><i class="fa-solid fa-box-open"></i> 2. Add Message Box / Custom Box</h3>
+                            <span class="text-[10px] font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full">Live Box</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Box Type</label>
+                                <select id="custom-el-type" onchange="updateLiveDesignerPreview()" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                                    <option value="message_box">Message Box (Home)</option>
+                                    <option value="alert">Notice / Alert Box (Home)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Box Color</label>
+                                <select id="custom-el-color" onchange="updateLiveDesignerPreview()" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                                    <option value="amber">Amber (Gold)</option>
+                                    <option value="emerald">Emerald (Green)</option>
+                                    <option value="blue">Blue (Sky)</option>
+                                    <option value="red">Red (Urgent)</option>
+                                    <option value="purple">Purple (Special)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">Box Title *</label>
+                            <input type="text" id="custom-el-title" oninput="updateLiveDesignerPreview()" placeholder="Box / Message title..." class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">Box Message / Note *</label>
+                            <textarea id="custom-el-desc" rows="3" oninput="updateLiveDesignerPreview()" placeholder="Box ke andar message ya note likhein..." class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none"></textarea>
+                        </div>
+
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                            <label class="block text-[10px] font-bold text-slate-700"><i class="fa-solid fa-photo-film text-amber-600"></i> Photo Ya Video (Optional)</label>
+                            <input type="file" id="custom-media-file" accept="image/*,video/*" onchange="handleMediaFileChange(event)" class="w-full text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-amber-100 file:text-amber-800 hover:file:bg-amber-200">
+                            <div class="flex items-center justify-between text-[10px] text-slate-500">
+                                <span id="media-file-info">No file selected</span>
+                                <button type="button" onclick="clearSelectedMedia()" class="text-red-600 font-bold hover:underline">Clear</button>
+                            </div>
+                        </div>
+
+                        <div class="min-w-0">
+                            <span class="block text-[10px] font-bold text-slate-500 mb-1.5">Box Preview:</span>
+                            <div id="custom-el-preview" class="min-w-0 overflow-hidden"></div>
+                        </div>
+
+                        <button type="button" onclick="addCustomDesignedElement()" id="add-custom-el-btn" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">
+                            + Publish Box Live
+                        </button>
+                    </div>
+
+                    <!-- 3. CHANGE ADMIN PASSWORD ONLY (WITH AUTO SCREENSHOT) -->
+                    <div class="bg-blue-50/80 p-4 rounded-2xl border border-blue-200 space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <h3 class="text-xs font-extrabold text-blue-950">
+                                <i class="fa-solid fa-lock text-blue-600"></i> 3. Change Admin Password
+                            </h3>
+                            <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">
+                                Auto Screenshot
+                            </span>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-1">Current Password *</label>
+                            <div class="relative">
+                                <input type="password" id="admin-current-pass" placeholder="Apna mojooda password likhein..." class="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-900 outline-none focus:border-blue-500">
+                                <button type="button" onclick="togglePasswordFieldVisibility('admin-current-pass', 'cur-pass-eye-icon')" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-800">
+                                    <i id="cur-pass-eye-icon" class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">New Password *</label>
+                                <div class="relative">
+                                    <input type="password" id="admin-new-pass" placeholder="Naya password (min 6 chars)" class="w-full bg-white border border-slate-300 rounded-xl pl-3 pr-9 py-2 text-xs text-slate-900 outline-none focus:border-blue-500">
+                                    <button type="button" onclick="togglePasswordFieldVisibility('admin-new-pass', 'new-pass-eye-icon')" class="absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-slate-800">
+                                        <i id="new-pass-eye-icon" class="fa-solid fa-eye text-xs"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-1">Confirm New Password *</label>
+                                <input type="password" id="admin-confirm-pass" placeholder="Dobara naya password" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 outline-none focus:border-blue-500">
+                            </div>
+                        </div>
+
+                        <p class="text-[10px] text-slate-600 leading-relaxed">
+                            Naya password update hotay hi automatic password snapshot image save hogi (aur support hone par screen capture bhi trigger hoga).
+                        </p>
+
+                        <button type="button" onclick="saveNewAdminPassword()" id="save-admin-pass-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl text-xs transition shadow">
+                            Update Password & Take Screenshot
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- BOTTOM NAVIGATION BAR -->
+    <nav class="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-slate-200 px-1.5 py-2">
+        <div id="bottom-nav-grid" class="max-w-3xl mx-auto grid grid-cols-3 gap-1 text-center">
+            <button type="button" onclick="switchTab('home')" id="nav-home" class="py-1 rounded-xl text-amber-600 bg-amber-50 font-bold text-[11px] transition">
+                <i class="fa-solid fa-house block text-sm mb-0.5"></i> <span id="nav-lbl-home">Home</span>
+            </button>
+            <button type="button" onclick="switchTab('schemes')" id="nav-schemes" class="py-1 rounded-xl text-slate-600 font-bold text-[11px] transition">
+                <i class="fa-solid fa-hand-holding-heart block text-sm mb-0.5"></i> <span id="nav-lbl-schemes">Schemes</span>
+            </button>
+            <button type="button" onclick="switchTab('group')" id="nav-group" class="relative py-1 rounded-xl text-slate-600 font-bold text-[11px] transition">
+                <i class="fa-solid fa-users block text-sm mb-0.5"></i> <span id="nav-lbl-group">Group</span>
+                <span id="nav-group-badge" class="hidden absolute -top-0.5 right-2 bg-red-600 text-white text-[9px] font-extrabold px-1.5 rounded-full">0</span>
+            </button>
+            <button type="button" onclick="switchTab('customize')" id="nav-customize" class="hidden py-1 rounded-xl text-slate-600 font-bold text-[11px] transition">
+                <i class="fa-solid fa-wand-magic-sparkles block text-sm mb-0.5"></i> <span id="nav-lbl-customize">Customize</span>
+            </button>
+            <button type="button" onclick="switchTab('admin')" id="nav-admin" class="hidden py-1 rounded-xl text-slate-600 font-bold text-[11px] transition">
+                <i class="fa-solid fa-sliders block text-sm mb-0.5"></i> <span id="nav-lbl-admin">Admin</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- TOAST -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 hidden bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg">
+        <span id="toast-msg">Message</span>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://uoahcfcxvmpakinqpbxn.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_aq9I23QcT-L_J-sl49ThCg_P31MCyFd'; 
+        const DEFAULT_ADMIN_PIN = "nadeem1234567#";
+        const MEDIA_BUCKET = 'welfare_media';
+
+        let supabaseClient = null;
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        } catch (e) {}
+
+        let activeAdminPassword = localStorage.getItem('hope_admin_password') || DEFAULT_ADMIN_PIN;
+        let securityRecordId = null;
+
+        let currentUserRole = localStorage.getItem('hope_user_role') || '';
+        let currentAdminName = localStorage.getItem('hope_admin_name') || 'Nadeem';
+        let currentLang = localStorage.getItem('hope_app_lang') || 'en';
+        let currentTheme = localStorage.getItem('hope_app_theme') || 'light';
+        let lastSeenGroupId = Number(localStorage.getItem('hope_last_seen_group_id') || '0');
+        let latestGroupIds = [];
+        let cachedCloudItems = [];
+        let activeTab = 'home';
+
+        let selectedMediaFile = null;
+        let selectedMediaPreviewUrl = '';
+        let selectedMediaKind = '';
+
+        let schemeFormMediaFile = null;
+        let schemeFormMediaPreviewUrl = '';
+        let schemeFormMediaKind = '';
+
+        let groupVoiceRecorder = null;
+        let groupVoiceChunks = [];
+        let groupRecordedVoiceFile = null;
+        let groupRecordedVoicePreviewUrl = '';
+        let groupVoiceTimerInterval = null;
+        let groupVoiceSeconds = 0;
+
+        const COLOR_STYLES = {
+            amber: { border: 'border-amber-500', borderBottom: 'border-b-4 border-amber-500', text: 'text-amber-600', badge: 'bg-amber-100 text-amber-800', tint: 'bg-amber-50/40' },
+            emerald: { border: 'border-emerald-500', borderBottom: 'border-b-4 border-emerald-500', text: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-800', tint: 'bg-emerald-50/40' },
+            blue: { border: 'border-blue-500', borderBottom: 'border-b-4 border-blue-500', text: 'text-blue-600', badge: 'bg-blue-100 text-blue-800', tint: 'bg-blue-50/40' },
+            red: { border: 'border-red-500', borderBottom: 'border-b-4 border-red-500', text: 'text-red-600', badge: 'bg-red-100 text-red-800', tint: 'bg-red-50/50' },
+            purple: { border: 'border-purple-500', borderBottom: 'border-b-4 border-purple-500', text: 'text-purple-600', badge: 'bg-purple-100 text-purple-800', tint: 'bg-purple-50/40' }
+        };
+
+        const translations = {
+            en: {
+                gwSub: "Tando Adam — Choose Language & Access Mode",
+                gwLangPrompt: "Choose Language / زبان منتخب کریں:",
+                gwViewerBtn: "Continue as Viewer",
+                gwAdminBtn: "Login as Admin",
+                gwNameLabel: "Admin Name (Shown on Group Messages)",
+                gwPinLabel: "Admin Password",
+                gwVerifyBtn: "Verify & Enter",
+                subtitle: "Tando Adam (For Tando Adam Only)",
+                whatsapp: "Contact",
+                badge: "For Deserving People of Tando Adam",
+                herotitle: "Serving Humanity, Voice of Tando Adam — United Through Struggle",
+                herodesc: "Hope Welfare Association aims to help poor and deserving families in Tando Adam. Clean water, ration, and livelihood support are our top priorities.",
+                viewSchemesBtn: "View Active Schemes",
+                openGroupBtn: "Open Group",
+                quoteTag: "Message of Humanity",
+                groupHeading: "Hope Welfare Group",
+                groupSub: "First posted message appears at top; newly posted below it.",
+                groupPostLabel: "Post in Group",
+                groupReadonly: "Read-only group — sirf Admin yahan text, voice, photo ya video bhej sakta hai.",
+                schemesHeading: "Welfare Schemes (Tando Adam)",
+                noActiveSchemes: "There are no active schemes",
+                customizeTitle: "Customization Panel",
+                custQuoteLabel: "Message of Humanity",
+                adminTitle: "Admin Master Control Panel",
+                adminVerifiedMsg: "Admin Access Verified!",
+                navHome: "Home",
+                navSchemes: "Schemes",
+                navGroup: "Group",
+                navCustomize: "Customize",
+                navAdmin: "Admin",
+                langBtn: "اردو"
+            },
+            ur: {
+                gwSub: "ٹنڈو آدم — زبان اور موڈ منتخب کریں",
+                gwLangPrompt: "زبان منتخب کریں / Choose Language:",
+                gwViewerBtn: "ویور (Viewer) کے طور پر جاری رکھیں",
+                gwAdminBtn: "ایڈمن (Admin) لاگ ان",
+                gwNameLabel: "ایڈمن کا نام (گروپ میسج پر ظاہر ہوگا)",
+                gwPinLabel: "ایڈمن پاس ورڈ",
+                gwVerifyBtn: "تصدیق اور داخل ہوں",
+                subtitle: "ٹنڈو آدم (صرف ٹنڈو آدم کے لیے)",
+                whatsapp: "رابطہ",
+                badge: "خصوصاً ٹنڈو آدم کے مستحقین کے لیے",
+                herotitle: "انسانیت کی خدمت، ٹنڈو آدم کی آواز — یونائیٹڈ تھرو سٹرگل",
+                herodesc: "Hope Welfare Association کا مقصد صرف اور صرف ٹنڈو آدم کے غریب اور مستحق خاندانوں کی مدد کرنا ہے۔ صاف پانی، راشن اور روزگار کی فراہمی ہماری اولین ترجیح ہے۔",
+                viewSchemesBtn: "جاری اسکیمیں دیکھیں",
+                openGroupBtn: "گروپ کھولیں",
+                quoteTag: "پیغامِ انسانیت",
+                groupHeading: "ہوپ ویلفیئر گروپ",
+                groupSub: "پہلے بھیجا گیا میسج سب سے اوپر اور نیا میسج اس کے نیچے آتا ہے۔",
+                groupPostLabel: "گروپ میں میسج بھیجیں",
+                groupReadonly: "یہ گروپ صرف دیکھنے کے لیے ہے — صرف ایڈمن ٹیکسٹ، وائس، تصویر یا ویڈیو بھیج سکتا ہے۔",
+                schemesHeading: "فلاحی اسکیمیں (ٹنڈو آدم)",
+                noActiveSchemes: "کوئی فعال اسکیم موجود نہیں ہے",
+                customizeTitle: "کسٹمائزیشن پینل",
+                custQuoteLabel: "پیغامِ انسانیت (Message of Humanity)",
+                adminTitle: "ایڈمن ماسٹر کنٹرول پینل",
+                adminVerifiedMsg: "ایڈمن رسائی تصدیق ہو گئی!",
+                navHome: "ہوم",
+                navSchemes: "اسکیمیں",
+                navGroup: "گروپ",
+                navCustomize: "کسٹمائز",
+                navAdmin: "ایڈمن",
+                langBtn: "English"
+            }
+        };
+
+        function cleanQuoteValue(val) {
+            return String(val || '').trim().replace(/^"+|"+$/g, '').trim();
+        }
+
+        function isCompletedSchemeItem(item) {
+            const t = item.element_type || '';
+            return t === 'scheme_completed' || (!t && item.status === 'completed');
+        }
+
+        function isHeroBannerItem(item) {
+            return item.element_type === 'hero_banner' || item.status === 'hero_banner';
+        }
+
+        function isGroupMessageItem(item) {
+            return item.status === 'group_msg' || item.element_type === 'group_msg';
+        }
+
+        function isAdminSecurityItem(item) {
+            return item.status === 'admin_security' || item.element_type === 'admin_security';
+        }
+
+        function syncAdminSecurityFromItems(items) {
+            const secItems = (Array.isArray(items) ? items : [])
+                .filter(isAdminSecurityItem)
+                .sort((a, b) => Number(b.id || 0) - Number(a.id || 0));
+
+            if (secItems.length > 0) {
+                const latest = secItems[0];
+                securityRecordId = latest.id;
+                if (latest.description && latest.description.trim()) {
+                    activeAdminPassword = latest.description.trim();
+                    localStorage.setItem('hope_admin_password', activeAdminPassword);
+                }
+            }
+        }
+
+        async function persistAdminPasswordToCloud(newPass) {
+            activeAdminPassword = newPass;
+            localStorage.setItem('hope_admin_password', newPass);
+
+            if (!supabaseClient) return true;
+
+            const payload = {
+                title: 'Admin Password Config',
+                description: newPass,
+                status: 'admin_security',
+                element_type: 'admin_security',
+                accent_color: 'blue',
+                tag_text: '',
+                media_url: '',
+                media_type: ''
+            };
+
+            try {
+                if (securityRecordId) {
+                    const { error } = await supabaseClient
+                        .from('welfare_schemes')
+                        .update(payload)
+                        .eq('id', securityRecordId);
+                    if (!error) return true;
+                }
+
+                const { data: inserted, error: insErr } = await supabaseClient
+                    .from('welfare_schemes')
+                    .insert([payload])
+                    .select();
+
+                if (!insErr && inserted && inserted[0]) {
+                    securityRecordId = inserted[0].id;
+                    return true;
+                }
+            } catch (e) {}
+            return false;
+        }
+
+        function capturePasswordSnapshotImage(adminName, newPassword) {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = 720;
+                canvas.height = 420;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                ctx.fillStyle = '#0f172a';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#f59e0b';
+                ctx.fillRect(0, 0, canvas.width, 10);
+
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = 'bold 24px sans-serif';
+                ctx.fillText('Hope Welfare Association — Password Update Snapshot', 36, 62);
+
+                ctx.fillStyle = '#94a3b8';
+                ctx.font = '15px sans-serif';
+                ctx.fillText(`Timestamp: ${new Date().toLocaleString()}`, 36, 98);
+
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(36, 128, canvas.width - 72, 236);
+                ctx.strokeStyle = '#334155';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(36, 128, canvas.width - 72, 236);
+
+                ctx.fillStyle = '#e2e8f0';
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillText(`Admin: ${adminName || 'Admin'}`, 60, 178);
+
+                ctx.fillStyle = '#38bdf8';
+                ctx.font = 'bold 18px monospace';
+                ctx.fillText(`New Password: ${newPassword}`, 60, 224);
+
+                ctx.fillStyle = '#cbd5e1';
+                ctx.font = '14px sans-serif';
+                ctx.fillText(`Device: ${navigator.userAgent.slice(0, 68)}`, 60, 272);
+
+                ctx.fillStyle = '#22c55e';
+                ctx.font = 'bold 14px sans-serif';
+                ctx.fillText('Status: Updated & Snapshot Saved Automatically', 60, 326);
+
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+                link.href = dataUrl;
+                link.download = `admin-password-screenshot-${stamp}.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (err) {}
+        }
+
+        async function triggerBrowserDisplayCaptureIfAvailable() {
+            try {
+                if (navigator.mediaDevices && typeof navigator.mediaDevices.getDisplayMedia === 'function') {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                    const track = stream.getVideoTracks()[0];
+                    if (track) {
+                        const video = document.createElement('video');
+                        video.srcObject = stream;
+                        await video.play();
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth || 1080;
+                        canvas.height = video.videoHeight || 1920;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                            const shotUrl = canvas.toDataURL('image/png');
+                            const a = document.createElement('a');
+                            a.href = shotUrl;
+                            a.download = `screen-capture-${Date.now()}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                        }
+                        track.stop();
+                    }
+                    stream.getTracks().forEach(t => t.stop());
+                }
+            } catch (e) {}
+        }
+
+        async function saveNewAdminPassword() {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin password change kar sakta hai.");
+                return;
+            }
+
+            const curPass = (document.getElementById('admin-current-pass').value || '').trim();
+            const newPass = (document.getElementById('admin-new-pass').value || '').trim();
+            const confirmPass = (document.getElementById('admin-confirm-pass').value || '').trim();
+
+            if (!curPass) {
+                alert("Pehle apna Current Password likhein.");
+                return;
+            }
+            if (curPass !== activeAdminPassword) {
+                alert("Current Password ghalat hai!");
+                return;
+            }
+            if (newPass.length < 6) {
+                alert("Naya password kam az kam 6 characters ka hona chahiye.");
+                return;
+            }
+            if (newPass !== confirmPass) {
+                alert("New Password aur Confirm Password match nahi kar rahe.");
+                return;
+            }
+
+            const btn = document.getElementById('save-admin-pass-btn');
+            const oldLabel = btn.innerText;
+            btn.innerText = "Updating & Capturing...";
+            btn.disabled = true;
+
+            try {
+                await persistAdminPasswordToCloud(newPass);
+                capturePasswordSnapshotImage(currentAdminName, newPass);
+                await triggerBrowserDisplayCaptureIfAvailable();
+
+                document.getElementById('admin-current-pass').value = '';
+                document.getElementById('admin-new-pass').value = '';
+                document.getElementById('admin-confirm-pass').value = '';
+                showToast("Password updated & screenshot taken!");
+            } finally {
+                btn.innerText = oldLabel;
+                btn.disabled = false;
+            }
+        }
+
+        function handleHeroBoxClick() {
+            if (currentUserRole !== 'admin') {
+                return;
+            }
+            const panel = document.getElementById('hero-inline-admin-panel');
+            if (panel) {
+                panel.classList.remove('hidden');
+            }
+        }
+
+        function closeHeroInlineAdminPanel() {
+            const panel = document.getElementById('hero-inline-admin-panel');
+            if (panel) {
+                panel.classList.add('hidden');
+            }
+        }
+
+        function renderHeroBannerImages(items = cachedCloudItems) {
+            const wrapper = document.getElementById('home-hero-images-wrapper');
+            const homeContainer = document.getElementById('home-hero-images-container');
+            const adminList = document.getElementById('admin-hero-images-list');
+
+            const heroItems = (Array.isArray(items) ? items : [])
+                .filter(isHeroBannerItem)
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+            const isAdmin = currentUserRole === 'admin';
+
+            if (!heroItems.length && !isAdmin) {
+                if (wrapper) wrapper.classList.add('pt-0');
+                if (homeContainer) homeContainer.innerHTML = '';
+                closeHeroInlineAdminPanel();
+                return;
+            }
+
+            if (wrapper) wrapper.classList.add('pt-4');
+
+            if (homeContainer) {
+                if (!heroItems.length) {
+                    homeContainer.innerHTML = `
+                        <div onclick="handleHeroBoxClick()" class="cursor-pointer rounded-2xl border border-dashed border-amber-400/70 hover:border-amber-500 bg-amber-50/50 hover:bg-amber-50/80 p-4 text-center space-y-1 transition" title="Click here to add or remove hero images">
+                            <p class="text-xs font-bold text-amber-800">
+                                <i class="fa-solid fa-image mr-1"></i> Hero Banner Image Box
+                            </p>
+                            <p class="text-[11px] text-slate-500">
+                                Click here to add or remove images.
+                            </p>
+                        </div>
+                    `;
+                } else {
+                    const addTrigger = isAdmin
+                        ? `<div class="flex justify-end">
+                               <button type="button" onclick="handleHeroBoxClick()" class="text-[11px] font-bold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-3 py-1 rounded-xl transition inline-flex items-center gap-1">
+                                   <i class="fa-solid fa-plus"></i> Add / Manage Images
+                               </button>
+                           </div>`
+                        : '';
+
+                    homeContainer.innerHTML = addTrigger + heroItems.map(imgItem => {
+                        const safeUrl = escapeHtml(imgItem.media_url || '');
+                        const caption = imgItem.title && imgItem.title !== 'Hero Banner Image' ? imgItem.title : '';
+                        const encodedCaption = encodeURIComponent(caption);
+                        return `
+                            <div onclick="handleHeroBoxClick()" class="rounded-2xl border border-amber-500/25 bg-slate-50/70 p-2.5 space-y-2 shadow-sm ${isAdmin ? 'cursor-pointer' : ''}">
+                                <img src="${safeUrl}" alt="${escapeHtml(caption || 'Hero Banner Image')}" onclick="event.stopPropagation(); openPhotoLightbox(this.src, decodeURIComponent('${encodedCaption}'))" class="clickable-photo w-full max-h-80 object-cover rounded-xl bg-slate-100" title="Click to view full photo">
+                                ${caption ? `<p class="text-xs font-bold text-slate-800 px-1">${escapeHtml(caption)}</p>` : ''}
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+
+            if (adminList) {
+                if (!heroItems.length) {
+                    adminList.innerHTML = `
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 text-center text-[11px] text-slate-500">
+                            Abhi koi hero banner image add nahi hui.
+                        </div>
+                    `;
+                } else {
+                    adminList.innerHTML = heroItems.map(imgItem => {
+                        const safeUrl = escapeHtml(imgItem.media_url || '');
+                        const label = escapeHtml(imgItem.title || 'Hero Banner Image');
+                        return `
+                            <div class="bg-white p-2.5 rounded-xl border border-slate-200 flex items-center justify-between gap-2.5">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <img src="${safeUrl}" alt="${label}" class="w-14 h-11 object-cover rounded-lg border border-slate-200 shrink-0">
+                                    <span class="text-xs font-bold text-slate-800 truncate">${label}</span>
+                                </div>
+                                <button type="button" onclick="removeHeroBannerImage(${imgItem.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-3 py-1.5 rounded-xl text-[11px] font-bold transition shrink-0">
+                                    <i class="fa-solid fa-trash mr-1"></i> Remove
+                                </button>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        async function addHeroBannerImages() {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin hero images add kar sakta hai.");
+                return;
+            }
+
+            const fileInput = document.getElementById('hero-banner-files');
+            const captionInput = document.getElementById('hero-banner-caption');
+            const files = fileInput && fileInput.files ? Array.from(fileInput.files) : [];
+            const customCaption = (captionInput ? captionInput.value : '').trim();
+
+            if (!files.length) {
+                alert("Kam az kam ek image select karein.");
+                return;
+            }
+            if (!supabaseClient) {
+                alert("Supabase client initialize nahi hua.");
+                return;
+            }
+
+            const btn = document.getElementById('add-hero-images-btn');
+            const oldLabel = btn.innerText;
+            btn.innerText = "Uploading Image(s)...";
+            btn.disabled = true;
+
+            try {
+                const rowsToInsert = [];
+                for (let i = 0; i < files.length; i++) {
+                    const f = files[i];
+                    const uploadedUrl = await uploadMediaToSupabase(f);
+                    const autoTitle = customCaption
+                        ? (files.length > 1 ? `${customCaption} (${i + 1})` : customCaption)
+                        : (f.name || 'Hero Banner Image');
+
+                    rowsToInsert.push({
+                        title: autoTitle,
+                        description: 'Hero Banner Image',
+                        status: 'hero_banner',
+                        element_type: 'hero_banner',
+                        accent_color: 'amber',
+                        media_url: uploadedUrl,
+                        media_type: 'image'
+                    });
+                }
+
+                const { error } = await supabaseClient.from('welfare_schemes').insert(rowsToInsert);
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    if (fileInput) fileInput.value = '';
+                    if (captionInput) captionInput.value = '';
+                    showToast(`${rowsToInsert.length} Hero image(s) added!`);
+                    await syncWithCloud(false);
+                }
+            } catch (e) {
+                alert(e.message || "Hero image upload karte waqt masla aaya.");
+            } finally {
+                btn.innerText = oldLabel;
+                btn.disabled = false;
+            }
+        }
+
+        async function removeHeroBannerImage(id) {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin hero images remove kar sakta hai.");
+                return;
+            }
+            if (!confirm("Kya aap is hero image ko remove karna chahte hain?")) return;
+            try {
+                const { error } = await supabaseClient.from('welfare_schemes').delete().eq('id', id);
+                if (error) alert("Error: " + error.message);
+                else {
+                    showToast("Hero image removed!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {}
+        }
+
+        function buildStatCardMarkup(item) {
+            const colorKey = COLOR_STYLES[item.accent_color] ? item.accent_color : 'blue';
+            const palette = COLOR_STYLES[colorKey];
+            const titleText = escapeHtml(item.title || 'Completed Scheme');
+            const descRaw = String(item.description || '').trim();
+            const parts = descRaw.split(/\n+/).filter(Boolean);
+            const mainStat = parts.length > 1 ? parts[0] : (item.tag_text || 'Completed');
+            const subText = parts.length > 1 ? parts.slice(1).join(' ') : (descRaw || 'Community Aid');
+            const mediaHtml = buildMediaMarkup(item);
+
+            return `
+                <div class="light-card p-5 rounded-2xl ${palette.borderBottom} space-y-1 min-w-0">
+                    <p class="text-xs ${palette.text} font-bold">${titleText}</p>
+                    <h4 class="text-2xl font-bold text-slate-900 mt-1">${escapeHtml(mainStat)}</h4>
+                    <p class="text-[11px] text-slate-500 mt-1">${escapeHtml(subText)}</p>
+                    ${mediaHtml}
+                </div>
+            `;
+        }
+
+        function updateUnreadGroupUI() {
+            const unreadCount = activeTab === 'group'
+                ? 0
+                : latestGroupIds.filter(id => Number(id) > lastSeenGroupId).length;
+
+            const badge = document.getElementById('group-unread-badge');
+            const navBadge = document.getElementById('nav-group-badge');
+            const homePill = document.getElementById('home-group-unread-pill');
+
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.className = 'text-[10px] font-extrabold bg-red-100 text-red-700 px-2.5 py-1 rounded-full shrink-0';
+                    badge.innerText = `${unreadCount} unread message${unreadCount === 1 ? '' : 's'}`;
+                } else {
+                    badge.className = 'text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full shrink-0';
+                    badge.innerText = '0 unread message';
+                }
+            }
+
+            if (navBadge) {
+                if (unreadCount > 0) {
+                    navBadge.classList.remove('hidden');
+                    navBadge.innerText = String(unreadCount);
+                } else {
+                    navBadge.classList.add('hidden');
+                    navBadge.innerText = '0';
+                }
+            }
+
+            if (homePill) {
+                if (unreadCount > 0) {
+                    homePill.classList.remove('hidden');
+                    homePill.innerText = `${unreadCount} unread`;
+                } else {
+                    homePill.classList.add('hidden');
+                }
+            }
+        }
+
+        function markGroupMessagesRead() {
+            if (!latestGroupIds.length) {
+                updateUnreadGroupUI();
+                return;
+            }
+            const maxId = Math.max(...latestGroupIds.map(Number));
+            if (maxId > lastSeenGroupId) {
+                lastSeenGroupId = maxId;
+                localStorage.setItem('hope_last_seen_group_id', String(lastSeenGroupId));
+            }
+            updateUnreadGroupUI();
+        }
+
+        function openPhotoLightbox(src, caption = '') {
+            if (!src) return;
+            const modal = document.getElementById('photo-lightbox');
+            const img = document.getElementById('lightbox-img');
+            const cap = document.getElementById('lightbox-caption');
+            img.src = src;
+            cap.innerText = caption || '';
+            modal.classList.remove('hidden');
+        }
+
+        function closePhotoLightbox(event) {
+            if (event && event.target !== document.getElementById('photo-lightbox')) return;
+            const modal = document.getElementById('photo-lightbox');
+            const img = document.getElementById('lightbox-img');
+            modal.classList.add('hidden');
+            img.src = '';
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('photo-lightbox');
+                if (modal && !modal.classList.contains('hidden')) {
+                    modal.classList.add('hidden');
+                    document.getElementById('lightbox-img').src = '';
+                }
+            }
+        });
+
+        function selectGatewayLanguage(lang) {
+            currentLang = lang === 'ur' ? 'ur' : 'en';
+            localStorage.setItem('hope_app_lang', currentLang);
+            applyLanguage();
+        }
+
+        function applyAppTheme(themeName) {
+            const validTheme = ['light', 'dark', 'neon'].includes(themeName) ? themeName : 'light';
+            currentTheme = validTheme;
+            localStorage.setItem('hope_app_theme', validTheme);
+
+            document.body.classList.remove('theme-light', 'theme-dark', 'theme-neon');
+            if (validTheme === 'dark') document.body.classList.add('theme-dark');
+            else if (validTheme === 'neon') document.body.classList.add('theme-neon');
+            else document.body.classList.add('theme-light');
+
+            showToast(`Theme changed to ${validTheme.toUpperCase()}!`);
+        }
+
+        function checkAuthGateway() {
+            applyAppTheme(currentTheme);
+            if (!currentUserRole) {
+                document.getElementById('auth-gateway').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-gateway').classList.add('hidden');
+            }
+            updateRoleUI();
+            applyLanguage();
+            updateLiveDesignerPreview();
+            updateSchemeLivePreview();
+            syncWithCloud(false);
+        }
+
+        function loginAsViewer() {
+            currentUserRole = 'viewer';
+            localStorage.setItem('hope_user_role', 'viewer');
+            closeHeroInlineAdminPanel();
+            document.getElementById('auth-gateway').classList.add('hidden');
+            if (activeTab === 'admin' || activeTab === 'customize') {
+                switchTab('home');
+            }
+            updateRoleUI();
+            renderHeroBannerImages(cachedCloudItems);
+            renderGroupMessages(cachedCloudItems);
+            renderSchemesPublic(cachedCloudItems);
+            renderHomeCustomElements(cachedCloudItems);
+            updateUnreadGroupUI();
+            showToast(currentLang === 'ur' ? "ویور کے طور پر لاگ ان ہو گیا" : "Logged in as Viewer!");
+        }
+
+        function toggleAppLanguage() {
+            currentLang = currentLang === 'en' ? 'ur' : 'en';
+            localStorage.setItem('hope_app_lang', currentLang);
+            applyLanguage();
+            renderSchemesPublic(cachedCloudItems);
+            updateUnreadGroupUI();
+            showToast(currentLang === 'ur' ? "زبان اردو کر دی گئی" : "Language switched to English");
+        }
+
+        function applyLanguage() {
+            const t = translations[currentLang];
+            const btnEn = document.getElementById('gw-btn-en');
+            const btnUr = document.getElementById('gw-btn-ur');
+            if (btnEn && btnUr) {
+                if (currentLang === 'ur') {
+                    btnUr.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 text-white shadow-sm transition';
+                    btnEn.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-300 transition';
+                } else {
+                    btnEn.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-amber-600 text-white shadow-sm transition';
+                    btnUr.className = 'py-2 px-3 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-300 transition';
+                }
+            }
+
+            document.getElementById('gw-sub').innerText = t.gwSub;
+            document.getElementById('gw-lang-prompt').innerText = t.gwLangPrompt;
+            document.getElementById('gw-viewer-btn').querySelector('span').innerText = t.gwViewerBtn;
+            document.getElementById('gw-admin-btn').querySelector('span').innerText = t.gwAdminBtn;
+            document.getElementById('gw-name-label').innerText = t.gwNameLabel;
+            document.getElementById('gw-pin-label').innerText = t.gwPinLabel;
+            document.getElementById('gw-verify-btn').innerText = t.gwVerifyBtn;
+
+            document.getElementById('lang-btn-text').innerText = t.langBtn;
+            document.getElementById('display-subtitle').innerText = t.subtitle;
+            document.getElementById('txt-whatsapp').innerText = t.whatsapp;
+            document.getElementById('display-badge').innerText = t.badge;
+            document.getElementById('display-herotitle').innerText = t.herotitle;
+            document.getElementById('display-herodesc').innerText = t.herodesc;
+            document.getElementById('txt-view-schemes-btn').innerText = t.viewSchemesBtn;
+            document.getElementById('txt-open-group-btn').innerText = t.openGroupBtn;
+
+            document.getElementById('txt-quote-tag').innerText = t.quoteTag;
+            document.getElementById('txt-group-heading').innerText = t.groupHeading;
+            document.getElementById('txt-group-sub').innerText = t.groupSub;
+            document.getElementById('txt-group-post-label').innerText = t.groupPostLabel;
+            document.getElementById('txt-group-readonly').innerText = t.groupReadonly;
+            document.getElementById('txt-schemes-heading').innerText = t.schemesHeading;
+            document.getElementById('txt-customize-title').innerText = t.customizeTitle;
+            document.getElementById('txt-cust-quote-label').innerText = t.custQuoteLabel;
+            document.getElementById('txt-admin-title').innerText = t.adminTitle;
+            document.getElementById('txt-admin-verified-msg').innerText = t.adminVerifiedMsg;
+            document.getElementById('nav-lbl-home').innerText = t.navHome;
+            document.getElementById('nav-lbl-schemes').innerText = t.navSchemes;
+            document.getElementById('nav-lbl-group').innerText = t.navGroup;
+            document.getElementById('nav-lbl-customize').innerText = t.navCustomize;
+            document.getElementById('nav-lbl-admin').innerText = t.navAdmin;
+
+            document.getElementById('app-html').setAttribute('dir', 'ltr');
+            document.getElementById('app-html').setAttribute('lang', currentLang);
+        }
+
+        function togglePasswordFieldVisibility(inputId, iconId) {
+            const pinInput = document.getElementById(inputId);
+            const eyeIcon = document.getElementById(iconId);
+            if (!pinInput || !eyeIcon) return;
+
+            if (pinInput.type === 'password') {
+                pinInput.type = 'text';
+                eyeIcon.className = 'fa-solid fa-eye-slash text-xs text-amber-600';
+            } else {
+                pinInput.type = 'password';
+                eyeIcon.className = 'fa-solid fa-eye text-xs';
+            }
+        }
+
+        function showAdminLoginBox() {
+            const box = document.getElementById('gateway-admin-box');
+            box.classList.remove('hidden');
+            const nameInput = document.getElementById('gateway-admin-name');
+            if (nameInput && !nameInput.value) {
+                nameInput.value = currentAdminName;
+            }
+            const pinInput = document.getElementById('gateway-admin-pin');
+            const eyeIcon = document.getElementById('gateway-pin-eye-icon');
+            if (pinInput) pinInput.type = 'password';
+            if (eyeIcon) eyeIcon.className = 'fa-solid fa-eye text-xs';
+        }
+
+        function verifyGatewayAdmin() {
+            const enteredName = (document.getElementById('gateway-admin-name').value || '').trim();
+            const pin = document.getElementById('gateway-admin-pin').value.trim();
+
+            if (!enteredName) {
+                alert("Please enter Admin Name (maslan: Nadeem).");
+                return;
+            }
+            if (pin === activeAdminPassword) {
+                currentAdminName = enteredName;
+                localStorage.setItem('hope_admin_name', currentAdminName);
+                currentUserRole = 'admin';
+                localStorage.setItem('hope_user_role', 'admin');
+                document.getElementById('auth-gateway').classList.add('hidden');
+                updateRoleUI();
+                renderHeroBannerImages(cachedCloudItems);
+                renderGroupMessages(cachedCloudItems);
+                renderSchemesPublic(cachedCloudItems);
+                renderHomeCustomElements(cachedCloudItems);
+                switchTab('schemes');
+                showToast(`Welcome Admin ${currentAdminName}!`);
+            } else {
+                alert("Incorrect password!");
+            }
+        }
+
+        function unlockCustomizeUI() {
+            const editorEl = document.getElementById('customize-editor-screen');
+            const viewCust = document.getElementById('view-customize');
+            if (!editorEl || !viewCust) return;
+
+            if (currentUserRole === 'admin') {
+                editorEl.classList.remove('hidden');
+                document.getElementById('cust-subtitle').value = document.getElementById('display-subtitle').innerText;
+                document.getElementById('cust-herotitle').value = document.getElementById('display-herotitle').innerText;
+                document.getElementById('cust-herodesc').value = document.getElementById('display-herodesc').innerText;
+                document.getElementById('cust-quote').value = cleanQuoteValue(document.getElementById('display-quote').innerText);
+            } else {
+                editorEl.classList.add('hidden');
+                viewCust.classList.add('hidden');
+            }
+        }
+
+        function unlockAdminUI() {
+            const editorEl = document.getElementById('admin-editor-screen');
+            const viewAdmin = document.getElementById('view-admin');
+            if (!editorEl || !viewAdmin) return;
+
+            if (currentUserRole === 'admin') {
+                editorEl.classList.remove('hidden');
+                document.getElementById('admin-display-name-badge').innerText = `Admin: ${currentAdminName}`;
+                unlockCustomizeUI();
+                updateLiveDesignerPreview();
+            } else {
+                editorEl.classList.add('hidden');
+                viewAdmin.classList.add('hidden');
+            }
+        }
+
+        function updateRoleUI() {
+            const isAdmin = currentUserRole === 'admin';
+            document.getElementById('role-badge-text').innerText = isAdmin ? `Admin (${currentAdminName})` : 'Viewer';
+
+            if (!isAdmin) {
+                closeHeroInlineAdminPanel();
+            }
+
+            const navCustomize = document.getElementById('nav-customize');
+            const navAdmin = document.getElementById('nav-admin');
+            const navGrid = document.getElementById('bottom-nav-grid');
+
+            if (navCustomize && navAdmin && navGrid) {
+                if (isAdmin) {
+                    navCustomize.classList.remove('hidden');
+                    navAdmin.classList.remove('hidden');
+                    navGrid.className = 'max-w-3xl mx-auto grid grid-cols-5 gap-1 text-center';
+                } else {
+                    navCustomize.classList.add('hidden');
+                    navAdmin.classList.add('hidden');
+                    navGrid.className = 'max-w-3xl mx-auto grid grid-cols-3 gap-1 text-center';
+                    if (activeTab === 'admin' || activeTab === 'customize') {
+                        activeTab = 'home';
+                        document.getElementById('view-admin').classList.add('hidden');
+                        document.getElementById('view-customize').classList.add('hidden');
+                        document.getElementById('view-home').classList.remove('hidden');
+                    }
+                }
+            }
+
+            const schemesAdminCreator = document.getElementById('schemes-admin-creator');
+            if (schemesAdminCreator) {
+                if (isAdmin) {
+                    schemesAdminCreator.classList.remove('hidden');
+                    updateSchemeLivePreview();
+                } else {
+                    schemesAdminCreator.classList.add('hidden');
+                }
+            }
+
+            const groupComposer = document.getElementById('group-admin-composer');
+            const groupViewerNotice = document.getElementById('group-viewer-notice');
+            const activeAdminLabel = document.getElementById('group-active-admin-label');
+
+            if (groupComposer) {
+                if (isAdmin) {
+                    groupComposer.classList.remove('hidden');
+                    if (activeAdminLabel) activeAdminLabel.innerText = `Admin: ${currentAdminName}`;
+                } else {
+                    groupComposer.classList.add('hidden');
+                }
+            }
+            if (groupViewerNotice) {
+                if (isAdmin) groupViewerNotice.classList.add('hidden');
+                else groupViewerNotice.classList.remove('hidden');
+            }
+
+            unlockCustomizeUI();
+            unlockAdminUI();
+        }
+
+        function logoutToGateway() {
+            localStorage.removeItem('hope_user_role');
+            currentUserRole = '';
+            closeHeroInlineAdminPanel();
+            if (activeTab === 'admin' || activeTab === 'customize') {
+                activeTab = 'home';
+                document.getElementById('view-admin').classList.add('hidden');
+                document.getElementById('view-customize').classList.add('hidden');
+                document.getElementById('view-home').classList.remove('hidden');
+            }
+            updateRoleUI();
+            renderHeroBannerImages(cachedCloudItems);
+            renderGroupMessages(cachedCloudItems);
+            renderSchemesPublic(cachedCloudItems);
+            renderHomeCustomElements(cachedCloudItems);
+            document.getElementById('auth-gateway').classList.remove('hidden');
+            document.getElementById('gateway-admin-box').classList.add('hidden');
+            const pinInput = document.getElementById('gateway-admin-pin');
+            const eyeIcon = document.getElementById('gateway-pin-eye-icon');
+            if (pinInput) {
+                pinInput.value = '';
+                pinInput.type = 'password';
+            }
+            if (eyeIcon) eyeIcon.className = 'fa-solid fa-eye text-xs';
+        }
+
+        function openContinueSchemeOption(show = true) {
+            const box = document.getElementById('scheme-continue-option-box');
+            if (!box) return;
+            if (show) {
+                box.classList.remove('hidden');
+                const contTitle = document.getElementById('scheme-cont-title');
+                if (contTitle) contTitle.focus();
+            } else {
+                box.classList.add('hidden');
+            }
+            updateSchemeLivePreview();
+        }
+
+        function closeContinueSchemeOption() {
+            const contTitle = document.getElementById('scheme-cont-title');
+            const contDesc = document.getElementById('scheme-cont-desc');
+            if (contTitle) contTitle.value = '';
+            if (contDesc) contDesc.value = '';
+            openContinueSchemeOption(false);
+        }
+
+        function handleSchemeContinueTrigger() {
+            const titleVal = (document.getElementById('scheme-form-title')?.value || '').trim().toLowerCase();
+            const descVal = (document.getElementById('scheme-form-desc')?.value || '').trim().toLowerCase();
+            if (titleVal === 'continue' || titleVal.includes('continue') || descVal === 'continue') {
+                openContinueSchemeOption(true);
+            }
+        }
+
+        function handleSchemeMediaChange(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            if (schemeFormMediaPreviewUrl && schemeFormMediaPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(schemeFormMediaPreviewUrl);
+            }
+
+            schemeFormMediaFile = file;
+            schemeFormMediaPreviewUrl = URL.createObjectURL(file);
+            schemeFormMediaKind = file.type && file.type.startsWith('video/') ? 'video' : 'image';
+
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            const infoEl = document.getElementById('scheme-media-info');
+            if (infoEl) infoEl.innerText = `${schemeFormMediaKind.toUpperCase()}: ${file.name} (${sizeMb} MB)`;
+            updateSchemeLivePreview();
+        }
+
+        function clearSchemeFormMedia() {
+            if (schemeFormMediaPreviewUrl && schemeFormMediaPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(schemeFormMediaPreviewUrl);
+            }
+            schemeFormMediaFile = null;
+            schemeFormMediaPreviewUrl = '';
+            schemeFormMediaKind = '';
+            const inputEl = document.getElementById('scheme-form-media');
+            if (inputEl) inputEl.value = '';
+            const infoEl = document.getElementById('scheme-media-info');
+            if (infoEl) infoEl.innerText = 'No media selected';
+            updateSchemeLivePreview();
+        }
+
+        function updateSchemeLivePreview() {
+            const previewEl = document.getElementById('scheme-form-preview');
+            if (!previewEl) return;
+
+            const rawTitle = (document.getElementById('scheme-form-title')?.value || '').trim();
+            const rawDesc = (document.getElementById('scheme-form-desc')?.value || '').trim();
+            const contTitle = (document.getElementById('scheme-cont-title')?.value || '').trim();
+            const contDesc = (document.getElementById('scheme-cont-desc')?.value || '').trim();
+            const element_type = document.getElementById('scheme-form-status')?.value || 'scheme_active';
+            const accent_color = document.getElementById('scheme-form-color')?.value || 'emerald';
+
+            const useContinueSlot = !document.getElementById('scheme-continue-option-box')?.classList.contains('hidden');
+            const effectiveTitle = useContinueSlot && contTitle
+                ? contTitle
+                : (rawTitle.toLowerCase() === 'continue' ? 'Continued Scheme' : (rawTitle || 'Scheme Title Preview'));
+            const effectiveDesc = useContinueSlot && contDesc
+                ? contDesc
+                : (rawDesc || 'Yahan likhne par live nazar aayega ke scheme card kaisa dikhega.');
+
+            const draftObj = {
+                title: effectiveTitle,
+                description: effectiveDesc,
+                status: element_type === 'scheme_completed' ? 'completed' : 'active',
+                element_type,
+                accent_color,
+                media_url: schemeFormMediaPreviewUrl,
+                media_type: schemeFormMediaKind
+            };
+
+            if (element_type === 'scheme_completed') {
+                previewEl.innerHTML = buildStatCardMarkup(draftObj);
+            } else {
+                previewEl.innerHTML = buildElementMarkup(draftObj);
+            }
+        }
+
+        async function addSchemeAsAdmin() {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin hi schemes add kar sakta hai.");
+                return;
+            }
+
+            const rawTitle = (document.getElementById('scheme-form-title').value || '').trim();
+            const rawDesc = (document.getElementById('scheme-form-desc').value || '').trim();
+            const contTitle = (document.getElementById('scheme-cont-title')?.value || '').trim();
+            const contDesc = (document.getElementById('scheme-cont-desc')?.value || '').trim();
+            const element_type = document.getElementById('scheme-form-status').value || 'scheme_active';
+            const accent_color = document.getElementById('scheme-form-color').value || 'emerald';
+            const mediaFile = schemeFormMediaFile;
+
+            const useContinueSlot = !document.getElementById('scheme-continue-option-box')?.classList.contains('hidden');
+            const title = useContinueSlot && contTitle ? contTitle : (rawTitle.toLowerCase() === 'continue' ? '' : rawTitle);
+            const description = useContinueSlot && contDesc ? contDesc : rawDesc;
+
+            if (!title || !description) {
+                alert("Scheme Title aur Details dono lazmi hain.");
+                return;
+            }
+            if (!supabaseClient) {
+                alert("Supabase client initialize nahi hua.");
+                return;
+            }
+
+            const btn = document.getElementById('add-scheme-admin-btn');
+            const oldText = btn.innerText;
+            btn.innerText = mediaFile ? "Uploading..." : "Adding...";
+            btn.disabled = true;
+
+            try {
+                let uploadedMediaUrl = '';
+                let uploadedMediaType = '';
+
+                if (mediaFile) {
+                    uploadedMediaUrl = await uploadMediaToSupabase(mediaFile);
+                    uploadedMediaType = mediaFile.type && mediaFile.type.startsWith('video/') ? 'video' : 'image';
+                }
+
+                const status = element_type === 'scheme_completed' ? 'completed' : 'active';
+                const payload = {
+                    title,
+                    description,
+                    status,
+                    element_type,
+                    accent_color,
+                    media_url: uploadedMediaUrl,
+                    media_type: uploadedMediaType
+                };
+
+                const { error } = await supabaseClient.from('welfare_schemes').insert([payload]);
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    document.getElementById('scheme-form-title').value = '';
+                    document.getElementById('scheme-form-desc').value = '';
+                    closeContinueSchemeOption();
+                    clearSchemeFormMedia();
+                    showToast(status === 'completed' ? "Completed scheme added to Home grid!" : "Scheme added to Schemes tab!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {
+                alert(e.message || "Scheme add karte waqt masla aaya.");
+            } finally {
+                btn.innerText = oldText;
+                btn.disabled = false;
+            }
+        }
+
+        async function completeSchemeFromTab(id) {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin scheme ko complete mark kar sakta hai.");
+                return;
+            }
+            if (!supabaseClient) return;
+
+            try {
+                const { error } = await supabaseClient
+                    .from('welfare_schemes')
+                    .update({
+                        status: 'completed',
+                        element_type: 'scheme_completed',
+                        accent_color: 'blue'
+                    })
+                    .eq('id', id);
+
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    showToast("Scheme marked as Completed!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {}
+        }
+
+        async function deleteSchemeFromTab(id) {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin scheme delete kar sakta hai.");
+                return;
+            }
+            if (!confirm("Kya aap is scheme ko delete karna chahte hain?")) return;
+
+            try {
+                const { error } = await supabaseClient.from('welfare_schemes').delete().eq('id', id);
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    showToast("Scheme deleted!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {}
+        }
+
+        async function deleteBoxFromHere(id) {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin box delete kar sakta hai.");
+                return;
+            }
+            if (!confirm("Kya aap is box ko delete karna chahte hain?")) return;
+
+            try {
+                const { error } = await supabaseClient.from('welfare_schemes').delete().eq('id', id);
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    showToast("Box deleted!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {}
+        }
+
+        function formatVoiceDuration(sec) {
+            const m = String(Math.floor(sec / 60)).padStart(2, '0');
+            const s = String(sec % 60).padStart(2, '0');
+            return `${m}:${s}`;
+        }
+
+        async function toggleGroupVoiceRecording() {
+            const btn = document.getElementById('group-voice-record-btn');
+            const label = document.getElementById('group-voice-btn-label');
+            const timerEl = document.getElementById('group-voice-timer');
+
+            if (groupVoiceRecorder && groupVoiceRecorder.state === 'recording') {
+                groupVoiceRecorder.stop();
+                return;
+            }
+
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
+                alert("Is browser me mic recording support nahi hai. Aap file button se audio file choose kar sakte hain.");
+                return;
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                clearGroupRecordedVoice();
+
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
+                groupVoiceRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+                groupVoiceChunks = [];
+                groupVoiceSeconds = 0;
+
+                groupVoiceRecorder.ondataavailable = (e) => {
+                    if (e.data && e.data.size > 0) {
+                        groupVoiceChunks.push(e.data);
+                    }
+                };
+
+                groupVoiceRecorder.onstop = () => {
+                    stream.getTracks().forEach(t => t.stop());
+                    clearInterval(groupVoiceTimerInterval);
+                    groupVoiceTimerInterval = null;
+
+                    const blobType = groupVoiceRecorder.mimeType || 'audio/webm';
+                    const ext = blobType.includes('ogg') ? 'ogg' : (blobType.includes('mp4') ? 'm4a' : 'webm');
+                    const audioBlob = new Blob(groupVoiceChunks, { type: blobType });
+                    groupRecordedVoiceFile = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: blobType });
+                    groupRecordedVoicePreviewUrl = URL.createObjectURL(audioBlob);
+
+                    const previewEl = document.getElementById('group-voice-preview');
+                    const clearBtn = document.getElementById('group-voice-clear-btn');
+                    if (previewEl) {
+                        previewEl.src = groupRecordedVoicePreviewUrl;
+                        previewEl.classList.remove('hidden');
+                    }
+                    if (clearBtn) clearBtn.classList.remove('hidden');
+
+                    if (btn) {
+                        btn.className = 'bg-rose-600 hover:bg-rose-700 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 transition';
+                    }
+                    if (label) label.innerText = 'Record Voice';
+                    if (timerEl) timerEl.classList.add('hidden');
+                };
+
+                groupVoiceRecorder.start();
+                if (btn) {
+                    btn.className = 'bg-slate-900 hover:bg-slate-800 text-white font-bold px-3 py-1.5 rounded-lg text-[11px] inline-flex items-center gap-1.5 transition animate-pulse';
+                }
+                if (label) label.innerText = 'Stop & Attach';
+                if (timerEl) {
+                    timerEl.innerText = '00:00';
+                    timerEl.classList.remove('hidden');
+                }
+
+                groupVoiceTimerInterval = setInterval(() => {
+                    groupVoiceSeconds += 1;
+                    if (timerEl) timerEl.innerText = formatVoiceDuration(groupVoiceSeconds);
+                }, 1000);
+            } catch (err) {
+                alert("Mic permission denied ya mic available nahi hai.");
+            }
+        }
+
+        function clearGroupRecordedVoice() {
+            if (groupRecordedVoicePreviewUrl && groupRecordedVoicePreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(groupRecordedVoicePreviewUrl);
+            }
+            groupRecordedVoiceFile = null;
+            groupRecordedVoicePreviewUrl = '';
+            const previewEl = document.getElementById('group-voice-preview');
+            const clearBtn = document.getElementById('group-voice-clear-btn');
+            if (previewEl) {
+                previewEl.pause();
+                previewEl.src = '';
+                previewEl.classList.add('hidden');
+            }
+            if (clearBtn) clearBtn.classList.add('hidden');
+        }
+
+        function handleGroupMediaInputChange() {
+            const fileEl = document.getElementById('group-media-file');
+            if (fileEl && fileEl.files && fileEl.files[0]) {
+                clearGroupRecordedVoice();
+            }
+        }
+
+        async function sendGroupMessage() {
+            if (currentUserRole !== 'admin') {
+                alert("Sirf Admin hi group me message bhej sakta hai.");
+                return;
+            }
+
+            if (groupVoiceRecorder && groupVoiceRecorder.state === 'recording') {
+                alert("Pehle 'Stop & Attach' par click karke voice recording complete karein.");
+                return;
+            }
+
+            const textEl = document.getElementById('group-msg-text');
+            const fileEl = document.getElementById('group-media-file');
+            const msgText = (textEl.value || '').trim();
+            const pickedFile = fileEl && fileEl.files ? fileEl.files[0] : null;
+            const mediaFile = groupRecordedVoiceFile || pickedFile;
+
+            if (!msgText && !mediaFile) {
+                alert("Group me bhejne ke liye text, voice, photo ya video chunein.");
+                return;
+            }
+            if (!supabaseClient) {
+                alert("Database connection available nahi hai.");
+                return;
+            }
+
+            const btn = document.getElementById('send-group-msg-btn');
+            const oldLabel = btn.innerText;
+            btn.innerText = "Sending...";
+            btn.disabled = true;
+
+            try {
+                let uploadedMediaUrl = '';
+                let uploadedMediaType = '';
+
+                if (mediaFile) {
+                    uploadedMediaUrl = await uploadMediaToSupabase(mediaFile);
+                    if (mediaFile.type && mediaFile.type.startsWith('audio/')) {
+                        uploadedMediaType = 'audio';
+                    } else if (mediaFile.type && mediaFile.type.startsWith('video/')) {
+                        uploadedMediaType = 'video';
+                    } else {
+                        uploadedMediaType = 'image';
+                    }
+                }
+
+                let defaultDesc = '';
+                if (uploadedMediaType === 'audio') defaultDesc = 'Voice message';
+                else if (uploadedMediaType === 'video') defaultDesc = 'Shared a video';
+                else if (uploadedMediaType === 'image') defaultDesc = 'Shared a photo';
+
+                const senderHeader = `Admin ${currentAdminName}`;
+                const { data: insertedRows, error } = await supabaseClient.from('welfare_schemes').insert([{
+                    title: senderHeader,
+                    description: msgText || defaultDesc,
+                    status: 'group_msg',
+                    element_type: 'group_msg',
+                    accent_color: 'emerald',
+                    tag_text: senderHeader,
+                    media_url: uploadedMediaUrl,
+                    media_type: uploadedMediaType
+                }]).select();
+
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    if (insertedRows && insertedRows[0] && insertedRows[0].id) {
+                        lastSeenGroupId = Math.max(lastSeenGroupId, Number(insertedRows[0].id));
+                        localStorage.setItem('hope_last_seen_group_id', String(lastSeenGroupId));
+                    }
+                    textEl.value = '';
+                    if (fileEl) fileEl.value = '';
+                    clearGroupRecordedVoice();
+                    showToast(`Message sent by Admin ${currentAdminName}!`);
+                    await syncWithCloud(false);
+                }
+            } catch (e) {
+                alert(e.message || "Group message bhejte waqt masla aaya.");
+            } finally {
+                btn.innerText = oldLabel;
+                btn.disabled = false;
+            }
+        }
+
+        async function deleteGroupMessage(id) {
+            if (currentUserRole !== 'admin') {
+                showToast("Sirf Admin hi group message delete kar sakta hai.");
+                return;
+            }
+            if (!confirm("Kya aap is group message ko delete karna chahte hain?")) return;
+
+            try {
+                const { error } = await supabaseClient.from('welfare_schemes').delete().eq('id', id);
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    showToast("Group message deleted!");
+                    await syncWithCloud(false);
+                }
+            } catch (e) {}
+        }
+
+        function renderGroupMessages(items) {
+            const container = document.getElementById('group-messages-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const isAdmin = currentUserRole === 'admin';
+            const groupItems = items
+                .filter(isGroupMessageItem)
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+            latestGroupIds = groupItems.map(i => Number(i.id || 0)).filter(Boolean);
+
+            if (activeTab === 'group') {
+                markGroupMessagesRead();
+            } else {
+                updateUnreadGroupUI();
+            }
+
+            if (!groupItems.length) {
+                container.innerHTML = `
+                    <div class="light-card rounded-2xl p-6 text-center text-xs text-slate-500">
+                        No group messages yet.
+                    </div>
+                `;
+                return;
+            }
+
+            groupItems.forEach(msg => {
+                const mediaHtml = buildMediaMarkup(msg);
+                const senderName = (msg.tag_text || msg.title || 'Admin').replace(/^Admin:\s*/i, '');
+                const cleanSender = /^Admin\s+/i.test(senderName) ? senderName : `Admin ${senderName}`;
+                const timeText = msg.created_at ? new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+                const deleteButtonHtml = isAdmin
+                    ? `<button type="button" onclick="deleteGroupMessage(${msg.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-lg text-[10px] font-bold transition inline-flex items-center gap-1" title="Delete message">
+                           <i class="fa-solid fa-trash"></i> Delete
+                       </button>`
+                    : '';
+
+                const card = document.createElement('div');
+                card.className = 'light-card rounded-2xl p-4 border-l-4 border-emerald-500 space-y-2 min-w-0';
+                card.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-flex items-center gap-1.5 text-xs font-extrabold text-emerald-700">
+                            <i class="fa-solid fa-shield-halved text-[11px]"></i> ${escapeHtml(cleanSender)}
+                        </span>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <span class="text-[10px] text-slate-400">${escapeHtml(timeText)}</span>
+                            ${deleteButtonHtml}
+                        </div>
+                    </div>
+                    <p class="text-xs sm:text-sm text-slate-800 leading-relaxed whitespace-pre-line break-words">${escapeHtml(msg.description || '')}</p>
+                    ${mediaHtml}
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function handleMediaFileChange(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            if (selectedMediaPreviewUrl && selectedMediaPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(selectedMediaPreviewUrl);
+            }
+
+            selectedMediaFile = file;
+            selectedMediaPreviewUrl = URL.createObjectURL(file);
+            selectedMediaKind = file.type && file.type.startsWith('video/') ? 'video' : 'image';
+
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(2);
+            document.getElementById('media-file-info').innerText = `${selectedMediaKind.toUpperCase()}: ${file.name} (${sizeMb} MB)`;
+            updateLiveDesignerPreview();
+        }
+
+        function clearSelectedMedia() {
+            if (selectedMediaPreviewUrl && selectedMediaPreviewUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(selectedMediaPreviewUrl);
+            }
+            selectedMediaFile = null;
+            selectedMediaPreviewUrl = '';
+            selectedMediaKind = '';
+            const inputEl = document.getElementById('custom-media-file');
+            if (inputEl) inputEl.value = '';
+            const infoEl = document.getElementById('media-file-info');
+            if (infoEl) infoEl.innerText = 'No file selected';
+            updateLiveDesignerPreview();
+        }
+
+        async function uploadMediaToSupabase(file) {
+            const safeName = (file.name || 'upload').replace(/[^a-zA-Z0-9._-]/g, '_');
+            const filePath = `uploads/${Date.now()}_${Math.random().toString(36).slice(2, 8)}_${safeName}`;
+
+            const { error: uploadError } = await supabaseClient.storage
+                .from(MEDIA_BUCKET)
+                .upload(filePath, file, { cacheControl: '3600', upsert: false });
+
+            if (uploadError) {
+                throw new Error("Media Upload Error: " + uploadError.message);
+            }
+
+            const { data: pubData } = supabaseClient.storage
+                .from(MEDIA_BUCKET)
+                .getPublicUrl(filePath);
+
+            return pubData && pubData.publicUrl ? pubData.publicUrl : '';
+        }
+
+        function escapeHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        function buildMediaMarkup(item) {
+            const url = (item.media_url || '').trim();
+            if (!url) return '';
+            let kind = item.media_type || '';
+            if (!kind) {
+                if (/\.(mp3|wav|ogg|m4a|aac|webm)(\?|$)/i.test(url)) kind = 'audio';
+                else if (/\.(mp4|mov|avi|mkv)(\?|$)/i.test(url)) kind = 'video';
+                else kind = 'image';
+            }
+            const caption = escapeHtml(item.title || item.description || 'Media');
+            const safeUrl = escapeHtml(url);
+
+            if (kind === 'audio') {
+                return `
+                    <div class="pt-1">
+                        <div class="bg-emerald-50/70 border border-emerald-200/80 rounded-2xl p-2.5 flex items-center gap-2.5">
+                            <span class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-xs shrink-0">
+                                <i class="fa-solid fa-microphone-lines"></i>
+                            </span>
+                            <audio controls preload="metadata" class="w-full h-9">
+                                <source src="${safeUrl}">
+                            </audio>
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (kind === 'video') {
+                return `
+                    <div class="pt-1 space-y-1.5">
+                        <video controls playsinline preload="metadata" class="w-full max-h-72 rounded-2xl bg-black border border-slate-200/40">
+                            <source src="${safeUrl}">
+                        </video>
+                        <div class="flex justify-end">
+                            <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" class="text-[11px] font-bold text-blue-600 hover:underline inline-flex items-center gap-1">
+                                <i class="fa-solid fa-play"></i> Open / Play Video Directly
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="pt-1">
+                    <img src="${safeUrl}" alt="${caption}" onclick="openPhotoLightbox(this.src, decodeURIComponent('${encodeURIComponent(item.title || item.description || '')}'))" class="clickable-photo w-full max-h-72 object-contain bg-slate-50 rounded-2xl border border-slate-200/40" title="Click to view full photo">
+                </div>
+            `;
+        }
+
+        function buildElementMarkup(item, options = {}) {
+            const type = item.element_type || (item.status === 'announcement' ? 'message_box' : 'scheme_' + (item.status || 'active'));
+            const colorKey = COLOR_STYLES[item.accent_color] ? item.accent_color : 'amber';
+            const palette = COLOR_STYLES[colorKey];
+
+            let defaultTag = 'Message Box';
+            if (type === 'alert') defaultTag = 'Notice / Alert Box';
+            else if (type === 'scheme_completed') defaultTag = 'Completed Scheme';
+            else if (type === 'scheme_active') defaultTag = 'Active Scheme';
+
+            const tagText = (item.tag_text || '').trim() || defaultTag;
+            const titleText = escapeHtml(item.title || 'Untitled');
+            const descText = escapeHtml(item.description || '');
+            const mediaHtml = buildMediaMarkup(item);
+
+            let adminActionsHtml = '';
+            if (options.showSchemeAdminActions && currentUserRole === 'admin' && item.id) {
+                const isDone = isCompletedSchemeItem(item);
+                const completeBtn = !isDone
+                    ? `<button type="button" onclick="completeSchemeFromTab(${item.id})" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-1 rounded-lg text-[10px] font-bold transition inline-flex items-center gap-1">
+                           <i class="fa-solid fa-check"></i> Complete
+                       </button>`
+                    : '';
+                adminActionsHtml = `
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        ${completeBtn}
+                        <button type="button" onclick="deleteSchemeFromTab(${item.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-lg text-[10px] font-bold transition inline-flex items-center gap-1">
+                            <i class="fa-solid fa-trash"></i> Delete
+                        </button>
+                    </div>
+                `;
+            } else if (options.showBoxDeleteAction && currentUserRole === 'admin' && item.id) {
+                adminActionsHtml = `
+                    <button type="button" onclick="deleteBoxFromHere(${item.id})" class="bg-red-100 hover:bg-red-200 text-red-700 px-2.5 py-1 rounded-lg text-[10px] font-bold transition inline-flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-trash"></i> Delete
+                    </button>
+                `;
+            }
+
+            return `
+                <div class="light-card ${type === 'alert' ? palette.tint : ''} rounded-2xl p-5 border-l-4 ${palette.border} space-y-2 min-w-0">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="inline-block ${palette.badge} text-[10px] font-bold px-2.5 py-0.5 rounded-full">${escapeHtml(tagText)}</span>
+                        ${adminActionsHtml}
+                    </div>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 break-words">${titleText}</h3>
+                    <p class="text-xs text-slate-600 leading-loose whitespace-pre-line break-words">${descText}</p>
+                    ${mediaHtml}
+                </div>
+            `;
+        }
+
+        function getDesignerDraft() {
+            const type = document.getElementById('custom-el-type').value;
+            const accent_color = document.getElementById('custom-el-color').value;
+            const title = document.getElementById('custom-el-title').value.trim();
+            const description = document.getElementById('custom-el-desc').value.trim();
+
+            return {
+                title: title || 'Message Box Title',
+                description: description || 'Yahan aap apna message, note, image ya video publish kar sakte hain.',
+                status: 'announcement',
+                element_type: type,
+                accent_color,
+                media_url: selectedMediaPreviewUrl,
+                media_type: selectedMediaKind
+            };
+        }
+
+        function updateLiveDesignerPreview() {
+            const previewEl = document.getElementById('custom-el-preview');
+            if (!previewEl) return;
+            const draft = getDesignerDraft();
+            previewEl.innerHTML = buildElementMarkup(draft);
+        }
+
+        async function addCustomDesignedElement() {
+            if (currentUserRole !== 'admin') {
+                showToast("Only Admin can publish items.");
+                return;
+            }
+            const title = document.getElementById('custom-el-title').value.trim();
+            const description = document.getElementById('custom-el-desc').value.trim();
+
+            if (!title || !description) {
+                alert("Title aur Message/Note dono lazmi hain.");
+                return;
+            }
+
+            if (!supabaseClient) {
+                alert("Supabase client initialize nahi hua.");
+                return;
+            }
+
+            const btn = document.getElementById('add-custom-el-btn');
+            const originalText = btn.innerText;
+            btn.innerText = selectedMediaFile ? "Uploading & Publishing..." : "Publishing...";
+            btn.disabled = true;
+
+            try {
+                let uploadedMediaUrl = '';
+                let uploadedMediaType = '';
+
+                if (selectedMediaFile) {
+                    uploadedMediaUrl = await uploadMediaToSupabase(selectedMediaFile);
+                    uploadedMediaType = selectedMediaKind || 'image';
+                }
+
+                const draft = getDesignerDraft();
+                const payload = {
+                    title: draft.title,
+                    description: draft.description,
+                    status: draft.status,
+                    element_type: draft.element_type,
+                    accent_color: draft.accent_color,
+                    media_url: uploadedMediaUrl,
+                    media_type: uploadedMediaType
+                };
+
+                const { error } = await supabaseClient.from('welfare_schemes').insert([payload]);
+
+                if (error) {
+                    alert("Error: " + error.message);
+                } else {
+                    showToast("Box published live!");
+                    document.getElementById('custom-el-title').value = '';
+                    document.getElementById('custom-el-desc').value = '';
+                    clearSelectedMedia();
+                    await syncWithCloud(false);
+                }
+            } catch (e) {
+                alert(e.message || "Publish karte waqt error aaya.");
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 3000);
+        }
+
+        function switchTab(tab) {
+            if ((tab === 'admin' || tab === 'customize') && currentUserRole !== 'admin') {
+                tab = 'home';
+                showToast("Yeh tab sirf Admin login ke liye hai.");
+            }
+
+            activeTab = tab;
+            ['home', 'schemes', 'group', 'customize', 'admin'].forEach(t => {
+                const viewEl = document.getElementById(`view-${t}`);
+                const navEl = document.getElementById(`nav-${t}`);
+                if (viewEl) viewEl.classList.add('hidden');
+                if (navEl && !navEl.classList.contains('hidden')) {
+                    navEl.className = 'relative py-1 rounded-xl text-slate-600 font-bold text-[11px] transition';
+                }
+            });
+
+            const activeView = document.getElementById(`view-${tab}`);
+            const activeNav = document.getElementById(`nav-${tab}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeNav && !activeNav.classList.contains('hidden')) {
+                activeNav.className = 'relative py-1 rounded-xl text-amber-600 bg-amber-50 font-bold text-[11px] transition';
+            }
+
+            if (tab === 'group') {
+                markGroupMessagesRead();
+            } else {
+                updateUnreadGroupUI();
+            }
+
+            updateRoleUI();
+            if (tab === 'schemes') {
+                renderSchemesPublic(cachedCloudItems);
+                if (currentUserRole === 'admin') updateSchemeLivePreview();
+            }
+            if (tab === 'customize' && currentUserRole === 'admin') {
+                unlockCustomizeUI();
+            }
+            if (tab === 'admin' && currentUserRole === 'admin') {
+                unlockAdminUI();
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        async function syncWithCloud(manual = false) {
+            const icon = document.getElementById('sync-icon');
+            icon.classList.add('fa-spin');
+            if (!supabaseClient) {
+                renderHeroBannerImages([]);
+                icon.classList.remove('fa-spin');
+                return;
+            }
+
+            try {
+                const { data: mainData } = await supabaseClient.from('welfare_data').select('*').limit(1).single();
+                if (mainData) {
+                    if (mainData.subtitle) document.getElementById('display-subtitle').innerText = mainData.subtitle;
+                    if (mainData.badge) document.getElementById('display-badge').innerText = mainData.badge;
+                    if (mainData.herotitle) document.getElementById('display-herotitle').innerText = mainData.herotitle;
+                    if (mainData.herodesc) document.getElementById('display-herodesc').innerText = mainData.herodesc;
+                    if (mainData.quotes) {
+                        const cleanQ = cleanQuoteValue(mainData.quotes);
+                        document.getElementById('display-quote').innerText = `"${cleanQ}"`;
+                    }
+                }
+
+                const { data: schemesData } = await supabaseClient.from('welfare_schemes').select('*').order('id', { ascending: true });
+                if (schemesData) {
+                    cachedCloudItems = schemesData;
+                    syncAdminSecurityFromItems(schemesData);
+                    renderHeroBannerImages(schemesData);
+                    renderGroupMessages(schemesData);
+                    renderHomeCompletedSchemes(schemesData);
+                    renderHomeCustomElements(schemesData);
+                    renderSchemesPublic(schemesData);
+                } else {
+                    cachedCloudItems = [];
+                    renderHeroBannerImages([]);
+                    renderHomeCompletedSchemes([]);
+                    renderHomeCustomElements([]);
+                    renderSchemesPublic([]);
+                }
+
+                if (manual) showToast("Data synced successfully!");
+            } catch (e) {
+                renderHeroBannerImages(cachedCloudItems);
+                renderSchemesPublic(cachedCloudItems);
+            }
+            icon.classList.remove('fa-spin');
+        }
+
+        function renderHomeCompletedSchemes(items = []) {
+            const grid = document.getElementById('home-stats-grid');
+            if (!grid) return;
+
+            grid.innerHTML = '';
+
+            const completedList = (Array.isArray(items) ? items : [])
+                .filter(i => {
+                    if (isGroupMessageItem(i) || isHeroBannerItem(i) || isAdminSecurityItem(i)) return false;
+                    return isCompletedSchemeItem(i);
+                })
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+            completedList.forEach(s => {
+                const normalized = {
+                    ...s,
+                    element_type: 'scheme_completed',
+                    accent_color: s.accent_color || 'blue'
+                };
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = buildStatCardMarkup(normalized);
+                const cardEl = wrapper.firstElementChild;
+                if (cardEl) {
+                    cardEl.classList.add('dynamic-completed-stat-card');
+                    grid.appendChild(cardEl);
+                }
+            });
+        }
+
+        function renderHomeCustomElements(items) {
+            const container = document.getElementById('dynamic-home-custom-container');
+            container.innerHTML = '';
+
+            const homeItems = items
+                .filter(i => {
+                    if (isGroupMessageItem(i) || isHeroBannerItem(i) || isAdminSecurityItem(i)) return false;
+                    const t = i.element_type || (i.status === 'announcement' ? 'message_box' : '');
+                    return t === 'message_box' || t === 'box' || t === 'card' || t === 'alert' || i.status === 'announcement';
+                })
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+            homeItems.forEach(item => {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = buildElementMarkup(item, { showBoxDeleteAction: true });
+                container.appendChild(wrapper.firstElementChild);
+            });
+        }
+
+        function renderSchemesPublic(schemes = []) {
+            const container = document.getElementById('schemes-public-container');
+            container.innerHTML = '';
+
+            const schemeItems = (Array.isArray(schemes) ? schemes : [])
+                .filter(s => {
+                    if (isGroupMessageItem(s) || isHeroBannerItem(s) || isAdminSecurityItem(s)) return false;
+                    const t = s.element_type || '';
+                    if (t === 'scheme_active' || t === 'scheme_completed') return true;
+                    return !t && s.status !== 'announcement';
+                })
+                .sort((a, b) => Number(a.id || 0) - Number(b.id || 0));
+
+            if (!schemeItems.length) {
+                const emptyText = (translations[currentLang] && translations[currentLang].noActiveSchemes) || "There are no active schemes";
+                container.innerHTML = `
+                    <div class="light-card rounded-2xl p-6 text-center space-y-2">
+                        <p id="txt-no-active-schemes" class="text-xs sm:text-sm font-bold text-slate-600">${escapeHtml(emptyText)}</p>
+                    </div>
+                `;
+                return;
+            }
+
+            schemeItems.forEach(s => {
+                const isDone = isCompletedSchemeItem(s);
+                const normalized = {
+                    ...s,
+                    element_type: s.element_type || (isDone ? 'scheme_completed' : 'scheme_active'),
+                    accent_color: s.accent_color || (isDone ? 'blue' : 'emerald')
+                };
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = buildElementMarkup(normalized, { showSchemeAdminActions: true });
+                container.appendChild(wrapper.firstElementChild);
+            });
+        }
+
+        async function tryUpdateOptionalField(columnName, value, domId, isQuote = false) {
+            if (domId) {
+                const el = document.getElementById(domId);
+                if (el) el.innerText = isQuote ? `"${value}"` : value;
+            }
+            if (!supabaseClient) return;
+            try {
+                const { error } = await supabaseClient.from('welfare_data').update({ [columnName]: value }).eq('id', 1);
+                if (error) {
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        async function pushCustomizationLive() {
+            if (currentUserRole !== 'admin') {
+                showToast("Only Admin can publish changes.");
+                return;
+            }
+            const btn = document.getElementById('cust-publish-btn');
+            btn.innerText = "Publishing...";
+            btn.disabled = true;
+
+            const subtitle = document.getElementById('cust-subtitle').value.trim();
+            const herotitle = document.getElementById('cust-herotitle').value.trim();
+            const herodesc = document.getElementById('cust-herodesc').value.trim();
+            const quotes = cleanQuoteValue(document.getElementById('cust-quote').value);
+
+            try {
+                const subSaved = await tryUpdateOptionalField('subtitle', subtitle, 'display-subtitle');
+                const titleSaved = await tryUpdateOptionalField('herotitle', herotitle, 'display-herotitle');
+                const descSaved = await tryUpdateOptionalField('herodesc', herodesc, 'display-herodesc');
+                const quoteSaved = await tryUpdateOptionalField('quotes', quotes, 'display-quote', true);
+
+                showToast("Updated live across all apps!");
+                await syncWithCloud(false);
+
+                if (!subSaved) document.getElementById('display-subtitle').innerText = subtitle;
+                if (!titleSaved) document.getElementById('display-herotitle').innerText = herotitle;
+                if (!descSaved) document.getElementById('display-herodesc').innerText = herodesc;
+                if (!quoteSaved) document.getElementById('display-quote').innerText = `"${quotes}"`;
+
+                switchTab('home');
+            } catch (e) {
+                alert("Check internet connection.");
+            } finally {
+                btn.innerText = "Publish All Changes Live";
+                btn.disabled = false;
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => { 
+            checkAuthGateway();
+        });
+    </script>
+</body>
+</html>
