@@ -1,0 +1,13 @@
+{
+  "background_color": "#d97706",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Hope Welfare Association",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Hope Welfare Association",
+  "start_url": "/",
+  "theme_color": "#f1f5f9",
+  "id": "hope-welfare-tando-adam",
+  "description": "Hope Welfare Association — Serving deserving families in Tando Adam with clean water, ration, and community welfare updates."
+}
